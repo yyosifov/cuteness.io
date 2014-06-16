@@ -2,8 +2,8 @@
 <html>
     <head>
         <!-- App stuff -->
-        <link rel="stylesheet" href="app.css" />
         <link href="http://cdn.kendostatic.com/2013.3.1119/styles/kendo.mobile.all.min.css" rel="stylesheet" type="text/css" />
+        <link rel="stylesheet" href="app.css" />    
         <link rel="apple-touch-icon-precomposed" href="images/57.png" />
         <link rel="apple-touch-icon-precomposed" sizes="72x72" href="images/72.png" />
         <link rel="apple-touch-icon-precomposed" sizes="114x114" href="images/114.png" />
@@ -208,7 +208,7 @@
         <script type="text/x-kendo-template" id="item-template">
             <div class="item">
                 <div class="item-thumb">
-                    <img class='loading-thumb' src='#: data.thumbnail != "default" ? data.thumbnail : "images/foxie_thumb.png" #' />
+                    <img class='loading-thumb' src='#: createThumbnail(data.url) #' />
                 </div>
                 <div class="item-summary">
                    <h3>#: data.title #</h3>

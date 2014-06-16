@@ -3,9 +3,22 @@ var os = kendo.support.mobileOS ,
     imgurAlbumRegex = /http:\/\/imgur.com\/a\//,
     imgurGalleryRegex = /http:\/\/imgur.com\/gallery\//,
     imgurSingleRegex = /http:\/\/imgur.com\/.[^\/]/,
-    imgExtensionRegex = /\.(png|jpg|gif|jpeg)$/i,
+    imgExtensionRegex = /\.(png|jpg|jpeg)$/i,
     DEFAULTIMAGEURL = "images/foxie.png",
+    everliveResizeUrl = 'http://bs1.cdn.telerik.com/image/v1/cA2Az6w7JWnKPFpd',
+    windowResizedTimeoutId,
     canvasScrollView;
+
+$(window).resize(function() {
+    clearTimeout(windowResizedTimeoutId);
+    windowResizedTimeoutId = setTimeout(resizeImages, 500);
+});
+
+var resizeImages = function resizeImages() {
+    if($("#canvas-scrollview").is(':visible')) {
+        $('#canvas-scrollview .item-img.loaded').each(updateItemSrc);
+    }
+}
 
 var awwDataSource = new kendo.data.DataSource({
     transport: {
@@ -230,17 +243,34 @@ function calculateOffset(dataItem) {
 }
 
 
-function urlProxy(url) {
-    return "http://demos.kendoui.com/service/RedditImages?url=" + escape(url) + "&width=160&height=160";
+function urlProxy(url, width, height) {
+    var resizeUrlTemplate = everliveResizeUrl + '/resize=w:{width},h:{height},fill:cover/{url}';
+    if(!width || !height) {
+        width = height = 160;
+    }
+
+    return resizeUrlTemplate.replace('{width}', parseInt(width))
+        .replace('{height}', parseInt(height))
+        .replace('{url}', url);
 }
 
 function updateSrc(e) {
-    var element = e.element,
-        image;
+    var element = e.element
 
-    element.find(".item-img").each(function(idx, item) {
-        var url = $(item).data("url");
-        image = $("<img />");
+    element.find(".item-img").each(updateItemSrc);
+}
+
+function updateItemSrc(idx, item) {
+    var $item = $(item),
+        url = $item.data("url");
+        
+    if(url === DEFAULTIMAGEURL) {
+        $item.removeClass("loaded").addClass("faded");
+    } else {
+        $item.css('background-image', 'url(' + DEFAULTIMAGEURL +')').addClass('faded').removeClass('loaded');
+        url = urlProxy(url, $item[0].clientWidth, $item[0].clientHeight);
+
+        var image = $("<img />");
 
         image.one("load", function() {
             $(item).css("background-image", "url(" + url + ")");
@@ -248,7 +278,7 @@ function updateSrc(e) {
         });
 
         image.attr("src", url);
-    });
+    }
 }
 
 function createImage(data) {
@@ -256,7 +286,7 @@ function createImage(data) {
         subreddit = data.subreddit,
         thumbnail = data.thumbnail,
         url = data.url,
-        imageTemplate = kendo.template('<div class="item-img faded" data-url="#= urlProxy(data) #"></div>');
+        imageTemplate = kendo.template('<div class="item-img faded" data-url="#= data #"></div>');
 
     if(url.match(imgExtensionRegex)) {
         return imageTemplate(url);
@@ -271,6 +301,22 @@ function createImage(data) {
     }
 
     return imageTemplate(DEFAULTIMAGEURL);
+}
+
+function createThumbnail(url) {
+    if(url.match(imgExtensionRegex)) {
+        return urlProxy(url, 50, 50);
+    }
+
+    if(url.match(imgurAlbumRegex) || url.match(imgurGalleryRegex)) {
+        return DEFAULTIMAGEURL;
+    }
+
+    if(url.match(imgurSingleRegex)) {
+        return urlProxy(url.concat(".jpg"), 50, 50);
+    }    
+
+    return DEFAULTIMAGEURL;
 }
 
 function createTile(data) {
